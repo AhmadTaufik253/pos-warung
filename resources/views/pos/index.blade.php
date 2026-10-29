@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>POS Toko Sembako Berkah Jaya</title>
+  <title>POS Warung Paing</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -87,7 +87,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="font-extrabold text-base sm:text-lg tracking-tight">Toko Sembako Berkah Jaya</h1>
+            <h1 class="font-extrabold text-base sm:text-lg tracking-tight">Warung Paing</h1>
             <span class="bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">API Connected</span>
           </div>
           <p id="live-clock" class="text-xs text-brand-200 font-mono tracking-wide">Memuat waktu...</p>
@@ -132,13 +132,7 @@
         <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
           <div class="relative flex items-center">
             <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-3.5 pointer-events-none"></i>
-            <input 
-              type="text" 
-              id="search-input" 
-              placeholder="Cari beras, minyak curah, gula, atau scan barcode..." 
-              autocomplete="off"
-              class="w-full pl-11 pr-24 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-brand-600 focus:bg-white transition-all shadow-inner"
-            >
+            <input type="text" id="search-input" placeholder="Cari beras, minyak curah, gula, atau scan barcode..." autocomplete="off"class="w-full pl-11 pr-24 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-brand-600 focus:bg-white transition-all shadow-inner">
             <span class="absolute right-3 text-[10px] font-mono font-semibold text-slate-400 bg-slate-200 px-2 py-1 rounded-md">ESC = Reset</span>
           </div>
 
@@ -186,18 +180,10 @@
 
         <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
           <div class="flex items-center justify-between gap-2 text-xs">
-            <span class="text-slate-500 font-medium">Diskon Toko (Rp):</span>
+            <span class="text-slate-500 font-medium">Diskon (Rp):</span>
             <div class="relative w-36">
               <span class="absolute left-2.5 top-1.5 text-slate-400 font-mono text-xs">Rp</span>
-              <input 
-                type="number" 
-                id="input-discount-val" 
-                min="0" 
-                step="500" 
-                placeholder="0" 
-                oninput="handleDiscountChange(this.value)"
-                class="w-full pl-8 pr-2 py-1 text-right bg-white border border-slate-300 rounded-lg font-mono text-xs font-bold outline-none focus:border-brand-500"
-              >
+              <input type="number" id="input-discount-val" min="0" step="500" placeholder="0" oninput="handleDiscountChange(this.value)"class="w-full pl-8 pr-2 py-1 text-right bg-white border border-slate-300 rounded-lg font-mono text-xs font-bold outline-none focus:border-brand-500">
             </div>
           </div>
 
@@ -216,12 +202,7 @@
             </div>
           </div>
 
-          <button 
-            type="button" 
-            id="btn-checkout" 
-            onclick="openCheckoutModal()" 
-            class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all cursor-pointer"
-          >
+          <button type="button" id="btn-checkout" onclick="openCheckoutModal()" class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all cursor-pointer">
             <i data-lucide="check-circle" class="w-5 h-5"></i>
             <span>Bayar Sekarang</span>
             <kbd class="bg-brand-800/60 text-white/90 text-xs font-mono px-2 py-0.5 rounded ml-1">F8</kbd>
@@ -269,13 +250,7 @@
           <div class="flex items-center gap-2 flex-1 max-w-md">
             <div class="relative w-full">
               <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none"></i>
-              <input 
-                type="text" 
-                id="master-search-input" 
-                oninput="renderMasterTable()"
-                placeholder="Cari barcode atau nama barang..." 
-                class="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium outline-none focus:border-brand-500"
-              >
+              <input type="text" id="master-search-input" oninput="renderMasterTable()"placeholder="Cari barcode atau nama barang..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium outline-none focus:border-brand-500">
             </div>
           </div>
 
@@ -425,13 +400,7 @@
             <button onclick="fetchDebts()" class="p-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-600" title="Refresh Kasbon">
               <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             </button>
-            <input 
-              type="text" 
-              id="kasbon-search-input" 
-              oninput="renderKasbonTable()" 
-              placeholder="Cari nama langganan..." 
-              class="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-medium outline-none focus:border-brand-500"
-            >
+            <input type="text" id="kasbon-search-input" oninput="renderKasbonTable()" placeholder="Cari nama langganan..." class="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-medium outline-none focus:border-brand-500">
           </div>
         </div>
 
@@ -500,7 +469,7 @@
 
       <div class="p-5 space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Cepat Uang Belanja:</label>
+          <label for="" class="block text-xs font-semibold text-slate-600 mb-1">Pilih Cepat Uang Belanja:</label>
           <div class="grid grid-cols-4 gap-2">
             <button type="button" onclick="setNominalInput(2000)" class="py-2 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 rounded-xl font-bold font-mono text-xs border border-slate-200">2k</button>
             <button type="button" onclick="setNominalInput(3000)" class="py-2 bg-slate-100 hover:bg-amber-100 text-slate-800 hover:text-amber-900 rounded-xl font-bold font-mono text-xs border border-slate-200">3k</button>
@@ -514,18 +483,10 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Ketik Nominal Uang Pembeli (Rp):</label>
+          <label for="" class="block text-xs font-semibold text-slate-700 mb-1">Ketik Nominal Uang Pembeli (Rp):</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-slate-400 font-bold font-mono text-sm">Rp</span>
-            <input 
-              type="number" 
-              id="nominal-money-input" 
-              min="500" 
-              step="500" 
-              placeholder="5000" 
-              oninput="calcNominalEquivalent()" 
-              class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-bold font-mono outline-none focus:border-amber-500 focus:bg-white"
-            >
+            <input type="number" id="nominal-money-input" min="500" step="500" placeholder="5000" oninput="calcNominalEquivalent()" class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-bold font-mono outline-none focus:border-amber-500 focus:bg-white">
           </div>
         </div>
 
@@ -540,11 +501,7 @@
           </div>
         </div>
 
-        <button 
-          type="button" 
-          onclick="confirmAddNominalToCart()" 
-          class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-600/20"
-        >
+        <button type="button" onclick="confirmAddNominalToCart()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-600/20">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span>Masukkan ke Keranjang</span>
         </button>
@@ -565,13 +522,8 @@
 
       <div class="p-5 space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama / Keterangan Antrean:</label>
-          <input 
-            type="text" 
-            id="hold-label-input" 
-            placeholder="Contoh: Ibu Rina (ambil dompet di motor)" 
-            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-amber-500 focus:bg-white"
-          >
+          <label for="hold-label-input" class="block text-xs font-semibold text-slate-700 mb-1">Nama / Keterangan Antrean:</label>
+          <input type="text"  id="hold-label-input"  placeholder="Contoh: Ibu Rina (ambil dompet di motor)"  class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold outline-none focus:border-amber-500 focus:bg-white">
           <p class="text-[10px] text-slate-400 mt-1">Antrean disimpan ke database dan stok belum dikurangi.</p>
         </div>
 
@@ -635,7 +587,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Pilih Metode Pembayaran:</label>
+          <label for="" class="block text-xs font-semibold text-slate-600 mb-1.5">Pilih Metode Pembayaran:</label>
           <div class="grid grid-cols-4 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold text-center">
             <button type="button" onclick="setPaymentMethod('cash')" id="pm-cash" class="pm-tab py-2 rounded-lg bg-white text-brand-900 shadow-xs">Tunai</button>
             <button type="button" onclick="setPaymentMethod('qris')" id="pm-qris" class="pm-tab py-2 rounded-lg text-slate-600 hover:text-slate-900">QRIS</button>
@@ -647,23 +599,15 @@
         <!-- TUNAI SECTION -->
         <div id="section-pay-tunai" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Pecahan Uang Tunai Cepat:</label>
+            <label for="" class="block text-xs font-semibold text-slate-600 mb-1">Pecahan Uang Tunai Cepat:</label>
             <div class="grid grid-cols-3 gap-1.5 text-xs font-mono font-bold" id="quick-cash-buttons">
               <!-- Rendered dynamically -->
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Nominal Uang Diterima (Rp):</label>
-            <input 
-              type="number" 
-              id="cash-received-input" 
-              min="0" 
-              step="500" 
-              oninput="calcCashChange()" 
-              placeholder="0" 
-              class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-lg font-black font-mono outline-none focus:border-brand-600 focus:bg-white"
-            >
+            <label for="cash-received-input" class="block text-xs font-semibold text-slate-700 mb-1">Nominal Uang Diterima (Rp):</label>
+            <input type="number" id="cash-received-input" min="0" step="500" oninput="calcCashChange()" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-lg font-black font-mono outline-none focus:border-brand-600 focus:bg-white">
           </div>
 
           <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex justify-between items-center text-xs">
@@ -677,28 +621,23 @@
           <div class="w-12 h-12 bg-white rounded-xl mx-auto flex items-center justify-center border border-slate-200 shadow-xs">
             <i data-lucide="qr-code" class="w-6 h-6 text-brand-700"></i>
           </div>
-          <p class="text-xs font-bold text-slate-700" id="digital-pay-title">Scan QRIS Toko Sembako</p>
+          <p class="text-xs font-bold text-slate-700" id="digital-pay-title">Scan QRIS Warung</p>
           <p class="text-[11px] text-slate-500">Pastikan notifikasi dana masuk telah diterima sebelum menyelesaikan transaksi.</p>
         </div>
 
         <!-- KASBON SECTION -->
         <div id="section-pay-kasbon" class="hidden space-y-2.5 bg-amber-50/70 p-3.5 rounded-xl border border-amber-200">
           <div>
-            <label class="block text-[11px] font-bold text-amber-900 mb-0.5">Nama Pelanggan (Wajib):</label>
+            <label for="kasbon-cust-name" class="block text-[11px] font-bold text-amber-900 mb-0.5">Nama Pelanggan (Wajib):</label>
             <input type="text" id="kasbon-cust-name" placeholder="Contoh: Bu Hj. Maryam / Pak Joko" class="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-semibold outline-none focus:border-amber-600">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-amber-900 mb-0.5">Catatan / Rencana Bayar:</label>
+            <label for="kasbon-notes" class="block text-[11px] font-bold text-amber-900 mb-0.5">Catatan / Rencana Bayar:</label>
             <input type="text" id="kasbon-notes" placeholder="Janji bayar saat gajian" class="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs outline-none focus:border-amber-600">
           </div>
         </div>
 
-        <button 
-          type="button" 
-          onclick="finalizeTransaction()" 
-          id="btn-submit-pay"
-          class="w-full py-3 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all cursor-pointer"
-        >
+        <button type="button" onclick="finalizeTransaction()" id="btn-submit-pay"class="w-full py-3 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all cursor-pointer">
           <i data-lucide="printer" class="w-4 h-4"></i>
           <span>Selesaikan Transaksi (API)</span>
         </button>
@@ -719,8 +658,8 @@
 
       <div class="p-4 bg-white font-mono text-[11px] text-slate-800 leading-tight space-y-2" id="printable-receipt">
         <div class="text-center border-b border-dashed border-slate-300 pb-2">
-          <h2 class="font-bold text-sm tracking-tight uppercase">Toko Sembako Berkah Jaya</h2>
-          <p class="text-[10px] text-slate-500">Jl. Pasar Senen No. 45, Jakarta</p>
+          <h2 class="font-bold text-sm tracking-tight uppercase">Warung Paing</h2>
+          <p class="text-[10px] text-slate-500">Jl. Mujahidin, No. 83, Parigi Baru, Pondok Aren</p>
           <p class="text-[10px] text-slate-500">WA: 0812-3456-7890</p>
         </div>
 
@@ -804,12 +743,12 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Barcode / SKU</label>
+            <label for="p-barcode" class="block font-semibold text-slate-700 mb-1">Barcode / SKU</label>
             <input type="text" id="p-barcode" placeholder="GLP-002" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500 font-mono">
           </div>
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="font-semibold text-slate-700">Kategori Sembako</label>
+              <label for="" class="font-semibold text-slate-700">Kategori Sembako</label>
               <button type="button" onclick="quickAddCategory()" class="text-[10px] text-brand-700 hover:underline font-bold">+ Baru</button>
             </div>
             <select id="p-category-id" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500">
@@ -819,32 +758,32 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Nama Barang Lengkap</label>
+          <label for="p-name" class="block font-semibold text-slate-700 mb-1">Nama Barang Lengkap</label>
           <input type="text" id="p-name" required placeholder="Gula Pasir Gulaku Kuning" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500">
         </div>
 
         <div class="grid grid-cols-3 gap-2.5">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Satuan Dasar</label>
+            <label for="p-base-unit" class="block font-semibold text-slate-700 mb-1">Satuan Dasar</label>
             <input type="text" id="p-base-unit" required placeholder="kg / liter / pcs" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Modal Dasar (Rp)</label>
+            <label for="p-buy-price" class="block font-semibold text-slate-700 mb-1">Modal Dasar (Rp)</label>
             <input type="number" id="p-buy-price" required min="0" step="100" placeholder="14000" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500 font-mono">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Harga Jual Standar (Rp)</label>
+            <label for="p-sell-price" class="block font-semibold text-slate-700 mb-1">Harga Jual Standar (Rp)</label>
             <input type="number" id="p-sell-price" required min="0" step="100" placeholder="17000" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500 font-mono">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Stok Fisik Gudang</label>
+            <label for="p-stock" class="block font-semibold text-slate-700 mb-1">Stok Fisik Gudang</label>
             <input type="number" id="p-stock" required min="0" step="any" placeholder="50" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500 font-mono">
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">Batas Peringatan Stok Menipis</label>
+            <label for="p-min-stock" class="block font-semibold text-slate-700 mb-1">Batas Peringatan Stok Menipis</label>
             <input type="number" id="p-min-stock" min="0" step="any" value="5" class="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none focus:border-brand-500 font-mono">
           </div>
         </div>
@@ -854,7 +793,7 @@
             <span class="block font-bold text-amber-950 text-xs">Izinkan Fitur Beli Nominal (Rp)?</span>
             <span class="text-[10px] text-amber-700">Untuk barang curah timbangan/literan (cth: "Beli Minyak Rp 5.000").</span>
           </div>
-          <label class="relative inline-flex items-center cursor-pointer">
+          <label for="" class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="p-allow-nominal" class="sr-only peer">
             <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
           </label>
@@ -900,7 +839,7 @@
       <p id="restock-prod-name" class="font-bold text-xs text-brand-800">Nama Barang</p>
 
       <div>
-        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Jumlah Tambahan Stok (Satuan Dasar):</label>
+        <label for="restock-qty-input" class="block text-[11px] font-semibold text-slate-600 mb-1">Jumlah Tambahan Stok (Satuan Dasar):</label>
         <input type="number" id="restock-qty-input" min="0.1" step="any" placeholder="Contoh: 50" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-base font-bold font-mono outline-none focus:border-brand-500">
       </div>
 
@@ -937,17 +876,10 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nominal Cicil / Pelunasan (Rp):</label>
+          <label for="" class="block text-xs font-semibold text-slate-700 mb-1">Nominal Cicil / Pelunasan (Rp):</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-slate-400 font-bold font-mono text-sm">Rp</span>
-            <input 
-              type="number" 
-              id="pk-amount-input" 
-              min="1000" 
-              step="1000" 
-              placeholder="0" 
-              class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-bold font-mono outline-none focus:border-amber-500 focus:bg-white"
-            >
+            <input type="number" id="pk-amount-input" min="1000" step="1000" placeholder="0" class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-bold font-mono outline-none focus:border-amber-500 focus:bg-white">
           </div>
           <button type="button" onclick="setPayKasbonFull()" class="text-[11px] font-bold text-amber-700 hover:underline mt-1 block">Bayar Lunas Semua</button>
         </div>
@@ -1261,7 +1193,7 @@
 
               <div class="mt-2.5">
                 <label class="text-[10px] font-semibold text-slate-400 block mb-1">Pilih Satuan Jual:</label>
-                <select 
+                <select
                   id="unit-sel-${item.id}"
                   class="w-full text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 outline-none focus:border-brand-500 focus:bg-white cursor-pointer"
                 >
@@ -1274,8 +1206,8 @@
               </div>
 
               ${item.allow_nominal_buy && !isOutOfStock ? `
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onclick="openNominalModal(${item.id})"
                   class="mt-2 w-full py-1.5 px-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs"
                 >
@@ -1287,8 +1219,8 @@
 
             <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
               <span class="text-[10px] text-slate-400 font-medium">${item.category ? item.category.name : 'Umum'}</span>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onclick="addToCart(${item.id})"
                 ${isOutOfStock ? 'disabled' : ''}
                 class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg flex items-center gap-1 transition-all active:scale-95 shadow-sm"
@@ -1784,7 +1716,7 @@
         document.getElementById('cash-received-input').focus();
       } else if (method === 'qris' || method === 'transfer') {
         digitalSec.classList.remove('hidden');
-        document.getElementById('digital-pay-title').textContent = method === 'qris' ? 'Scan Barcode QRIS Toko' : 'Transfer Rekening Bank Toko';
+        document.getElementById('digital-pay-title').textContent = method === 'qris' ? 'Scan Barcode QRIS Warung' : 'Transfer Rekening Bank Warung';
       } else if (method === 'debt') {
         kasbonSec.classList.remove('hidden');
         document.getElementById('kasbon-cust-name').focus();
@@ -1797,8 +1729,8 @@
       const unique = Array.from(new Set(nominations)).filter(n => n >= total || n === total);
 
       container.innerHTML = unique.slice(0, 6).map((nom, idx) => `
-        <button 
-          type="button" 
+        <button
+          type="button"
           onclick="setCashReceived(${nom})"
           class="py-2 px-1 bg-slate-100 hover:bg-brand-100 text-slate-800 rounded-lg border border-slate-200 transition-colors ${idx === 0 ? 'border-brand-500 bg-brand-50 text-brand-900 font-black' : ''}"
         >
@@ -2371,7 +2303,7 @@
       const tbody = document.getElementById('kasbon-table-body');
       const query = (document.getElementById('kasbon-search-input').value || '').toLowerCase().trim();
 
-      const filtered = kasbonList.filter(k => 
+      const filtered = kasbonList.filter(k =>
         (k.customer && k.customer.name.toLowerCase().includes(query)) ||
         (k.customer && k.customer.phone && k.customer.phone.includes(query))
       );
