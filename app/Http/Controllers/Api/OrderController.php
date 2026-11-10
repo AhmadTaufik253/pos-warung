@@ -62,44 +62,92 @@ class OrderController extends Controller
         ]);
 
         $order = DB::transaction(function () use ($validated) {
+            // 1. Kumpulkan semua ID produk unik & urutkan secara deterministik untuk mencegah DEADLOCK
+            $productIds = collect($validated['items'])
+                ->pluck('product_id')
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+
+            // Kunci semua baris produk sekaligus dalam 1 query batch
+            $products = Product::whereIn('id', $productIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // 2. Ambil data satuan resmi untuk verifikasi
+            $unitIds = collect($validated['items'])
+                ->pluck('product_unit_id')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $productUnits = !empty($unitIds)
+                ? ProductUnit::whereIn('id', $unitIds)->get()->keyBy('id')
+                : collect();
+
             $totalAmount = 0;
             $totalCogs = 0;
             $orderItemsPayload = [];
+            $requiredDeductions = [];
 
-            // 1. Validasi & Pengurangan Stok Atomik dengan lockForUpdate
+            // 3. Verifikasi item, kalkulasi HPP, dan kumpulkan akumulasi pengurangan stok per produk
             foreach ($validated['items'] as $item) {
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+                $productId = $item['product_id'];
+                $product = $products[$productId] ?? null;
 
-                // Hitung total pemotongan stok pada satuan dasar
-                $stockToDeduct = (float) $item['quantity'] * (float) $item['conversion_factor'];
-
-                if ($product->current_stock < $stockToDeduct) {
-                    abort(422, "Stok tidak mencukupi untuk item: {$product->name}. Sisa: {$product->current_stock} {$product->base_unit}");
+                if (!$product) {
+                    abort(404, "Produk dengan ID {$productId} tidak ditemukan.");
                 }
 
-                // Potong stok produk langsung
-                $product->decrement('current_stock', $stockToDeduct);
+                // Gunakan faktor konversi terverifikasi jika ada relasi satuan
+                $unit = !empty($item['product_unit_id']) ? ($productUnits[$item['product_unit_id']] ?? null) : null;
+                $conversionFactor = $unit ? (float) $unit->conversion_factor : (float) $item['conversion_factor'];
+                $quantity = (float) $item['quantity'];
+
+                // Hitung potongan stok pada satuan dasar
+                $stockToDeduct = $quantity * $conversionFactor;
+                $requiredDeductions[$productId] = ($requiredDeductions[$productId] ?? 0) + $stockToDeduct;
+
+                // Verifikasi kalkulasi subtotal (mencegah manipulasi angka desimal / nilai minus)
+                $sellingPrice = (float) $item['selling_price'];
+                $calculatedSubtotal = round($quantity * $sellingPrice, 2);
+                $subtotal = (abs($calculatedSubtotal - (float) $item['subtotal']) > 1)
+                    ? $calculatedSubtotal
+                    : (float) $item['subtotal'];
 
                 // Hitung HPP riil item bersangkutan
-                $costPricePerUnit = (float) $product->base_buy_price * (float) $item['conversion_factor'];
-                $itemCogs = $costPricePerUnit * (float) $item['quantity'];
+                $costPricePerUnit = (float) $product->base_buy_price * $conversionFactor;
+                $itemCogs = $costPricePerUnit * $quantity;
 
-                $totalAmount += (float) $item['subtotal'];
+                $totalAmount += $subtotal;
                 $totalCogs += $itemCogs;
 
                 $orderItemsPayload[] = [
                     'product_id' => $product->id,
-                    'product_unit_id' => $item['product_unit_id'] ?? null,
+                    'product_unit_id' => $unit ? $unit->id : null,
                     'unit_name' => $item['unit_name'],
-                    'quantity' => $item['quantity'],
-                    'conversion_factor' => $item['conversion_factor'],
+                    'quantity' => $quantity,
+                    'conversion_factor' => $conversionFactor,
                     'stock_deducted' => $stockToDeduct,
                     'cost_price' => $costPricePerUnit,
-                    'selling_price' => $item['selling_price'],
-                    'subtotal' => $item['subtotal'],
+                    'selling_price' => $sellingPrice,
+                    'subtotal' => $subtotal,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+            }
+
+            // 4. Validasi kecukupan stok total per produk & potong stok atomik
+            foreach ($requiredDeductions as $productId => $totalDeduct) {
+                $product = $products[$productId];
+                if ($product->current_stock < $totalDeduct) {
+                    abort(422, "Stok tidak mencukupi untuk item: {$product->name}. Sisa: {$product->current_stock} {$product->base_unit}, dibutuhkan: {$totalDeduct}");
+                }
+                $product->decrement('current_stock', $totalDeduct);
             }
 
             $discount = (float) ($validated['discount_amount'] ?? 0);
@@ -107,21 +155,27 @@ class OrderController extends Controller
             $cashTendered = (float) ($validated['cash_tendered'] ?? $grandTotal);
             $changeAmount = ($validated['payment_method'] === 'cash') ? max(0, $cashTendered - $grandTotal) : 0;
 
-            // Handle Customer jika Kasbon
+            // 5. Handle Customer Kasbon dengan proteksi race condition
             $customerId = $validated['customer_id'] ?? null;
             if ($validated['payment_method'] === 'debt') {
                 if (!$customerId) {
-                    $customer = Customer::firstOrCreate(
-                        ['name' => trim($validated['customer_name'])],
-                        ['current_debt_balance' => 0]
-                    );
+                    $customerName = trim($validated['customer_name']);
+                    $customer = Customer::where('name', $customerName)->lockForUpdate()->first();
+                    if (!$customer) {
+                        $customer = Customer::create([
+                            'name' => $customerName,
+                            'current_debt_balance' => 0,
+                        ]);
+                    }
                     $customerId = $customer->id;
+                } else {
+                    Customer::where('id', $customerId)->lockForUpdate()->firstOrFail();
                 }
             }
 
-            // 2. Simpan Header Order
+            // 6. Simpan Header Order (Invoice number unik dengan timestamp presisi tinggi)
             $order = Order::create([
-                'invoice_number' => 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(5)),
+                'invoice_number' => 'INV-' . date('YmdHis') . '-' . strtoupper(Str::random(4)),
                 'customer_id' => $customerId,
                 'total_amount' => $totalAmount,
                 'discount_amount' => $discount,
@@ -135,13 +189,13 @@ class OrderController extends Controller
                 'transaction_date' => now(),
             ]);
 
-            // 3. Simpan Relasi Order Items
+            // 7. Simpan Relasi Order Items secara massal (Bulk Insert)
             foreach ($orderItemsPayload as &$itemPayload) {
                 $itemPayload['order_id'] = $order->id;
             }
             OrderItem::insert($orderItemsPayload);
 
-            // 4. Jika Pembayaran Kasbon, Catat ke Buku Hutang
+            // 8. Jika Pembayaran Kasbon, Catat ke Buku Hutang
             if ($validated['payment_method'] === 'debt') {
                 DebtRecord::create([
                     'customer_id' => $customerId,
@@ -184,7 +238,7 @@ class OrderController extends Controller
 
             // Disimpan dengan status hold (STOK BELUM DIPOTONG)
             $order = Order::create([
-                'invoice_number' => 'HOLD-' . date('YmdHis'),
+                'invoice_number' => 'HOLD-' . date('YmdHis') . '-' . strtoupper(Str::random(3)),
                 'total_amount' => $subtotal,
                 'discount_amount' => 0,
                 'grand_total' => $subtotal,
@@ -194,23 +248,34 @@ class OrderController extends Controller
                 'transaction_date' => now(),
             ]);
 
-            foreach ($validated['items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $stockDeducted = (float) $item['quantity'] * (float) $item['conversion_factor'];
-                $cost = (float) $product->base_buy_price * (float) $item['conversion_factor'];
+            // Optimasi N+1: Ambil produk sekaligus dalam 1 query
+            $productIds = collect($validated['items'])->pluck('product_id')->unique()->values()->all();
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
-                $order->items()->create([
+            $orderItemsPayload = [];
+            foreach ($validated['items'] as $item) {
+                $product = $products[$item['product_id']] ?? null;
+                $costPrice = $product ? (float) $product->base_buy_price * (float) $item['conversion_factor'] : 0;
+                $stockDeducted = (float) $item['quantity'] * (float) $item['conversion_factor'];
+
+                $orderItemsPayload[] = [
+                    'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'product_unit_id' => $item['product_unit_id'] ?? null,
                     'unit_name' => $item['unit_name'],
                     'quantity' => $item['quantity'],
                     'conversion_factor' => $item['conversion_factor'],
                     'stock_deducted' => $stockDeducted,
-                    'cost_price' => $cost,
+                    'cost_price' => $costPrice,
                     'selling_price' => $item['selling_price'],
                     'subtotal' => $item['subtotal'],
-                ]);
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
+
+            // Bulk Insert item hold
+            OrderItem::insert($orderItemsPayload);
 
             return $order->load('items');
         });

@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
     // GET /api/v1/categories (Ambil semua kategori beserta jumlah produknya)
     public function index(): JsonResponse
     {
-        $categories = Category::withCount('products')
-            ->orderBy('name', 'asc')
-            ->get();
+        $categories = Cache::remember('pos_categories_with_count', 3600, function () {
+            return Category::withCount('products')
+                ->orderBy('name', 'asc')
+                ->get();
+        });
 
         return response()->json([
             'success' => true,
@@ -36,6 +39,8 @@ class CategoryController extends Controller
         $category = Category::create([
             'name' => trim($validated['name']),
         ]);
+
+        Cache::forget('pos_categories_with_count');
 
         return response()->json([
             'success' => true,
@@ -71,6 +76,9 @@ class CategoryController extends Controller
             'name' => trim($validated['name']),
         ]);
 
+        Cache::forget('pos_categories_with_count');
+        Cache::forget('pos_products_catalog');
+
         return response()->json([
             'success' => true,
             'message' => 'Kategori berhasil diperbarui',
@@ -92,6 +100,9 @@ class CategoryController extends Controller
         }
 
         $category->delete();
+
+        Cache::forget('pos_categories_with_count');
+        Cache::forget('pos_products_catalog');
 
         return response()->json([
             'success' => true,

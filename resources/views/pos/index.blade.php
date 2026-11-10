@@ -88,7 +88,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="font-extrabold text-base sm:text-lg tracking-tight">Warung Paing</h1>
-            <span class="bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">API Connected</span>
+            <span class="bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">V1.0.0</span>
           </div>
           <p id="live-clock" class="text-xs text-brand-200 font-mono tracking-wide">Memuat waktu...</p>
         </div>
@@ -639,7 +639,7 @@
 
         <button type="button" onclick="finalizeTransaction()" id="btn-submit-pay"class="w-full py-3 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30 transition-all cursor-pointer">
           <i data-lucide="printer" class="w-4 h-4"></i>
-          <span>Selesaikan Transaksi (API)</span>
+          <span>Selesaikan Transaksi</span>
         </button>
       </div>
     </div>
@@ -830,7 +830,7 @@
       <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
           <i data-lucide="sliders" class="w-4 h-4 text-emerald-600"></i>
-          <span>Restock Stok Kilat (API)</span>
+          <span>Restock Stok Kilat</span>
         </h3>
         <button onclick="closeRestockModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
@@ -1831,7 +1831,7 @@
         showToast('Kesalahan: ' + err.message);
       } finally {
         btnPay.disabled = false;
-        btnPay.innerHTML = `<i data-lucide="printer" class="w-4 h-4"></i><span>Selesaikan Transaksi (API)</span>`;
+        btnPay.innerHTML = `<i data-lucide="printer" class="w-4 h-4"></i><span>Selesaikan Transaksi</span>`;
         lucide.createIcons();
       }
     }

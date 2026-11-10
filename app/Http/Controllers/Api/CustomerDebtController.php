@@ -23,17 +23,22 @@ class CustomerDebtController extends Controller
         ]);
     }
 
-    // GET /api/v1/debts (Daftar seluruh catatan kasbon aktif)
-    public function indexDebts(): JsonResponse
+    // GET /api/v1/debts (Daftar seluruh catatan kasbon)
+    public function indexDebts(Request $request): JsonResponse
     {
-        $debts = DebtRecord::with(['customer', 'order', 'payments'])
-            ->orderBy('status', 'asc')
+        $query = DebtRecord::with(['customer', 'order', 'payments']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        $debts = $query->orderBy('status', 'asc')
             ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json([
             'success' => true,
-            'total_unpaid' => Customer::sum('current_debt_balance'),
+            'total_unpaid' => (float) Customer::sum('current_debt_balance'),
             'data' => $debts,
         ]);
     }
@@ -54,6 +59,9 @@ class CustomerDebtController extends Controller
                 abort(422, 'Kasbon transaksi ini sudah lunas.');
             }
 
+            // Kunci baris Customer untuk mencegah race condition saldo kasbon
+            $customer = Customer::where('id', $debt->customer_id)->lockForUpdate()->firstOrFail();
+
             $payAmount = min((float) $validated['amount'], (float) $debt->remaining_balance);
 
             // Simpan riwayat setoran/cicilan
@@ -65,12 +73,12 @@ class CustomerDebtController extends Controller
                 'paid_at' => now(),
             ]);
 
-            // Update sisa hutang di record dan customer
+            // Update sisa hutang di record dan saldo pelanggan secara konsisten
             $debt->remaining_balance -= $payAmount;
             $debt->status = ($debt->remaining_balance <= 0) ? 'paid' : 'partially_paid';
             $debt->save();
 
-            Customer::where('id', $debt->customer_id)->decrement('current_debt_balance', $payAmount);
+            $customer->decrement('current_debt_balance', $payAmount);
 
             return $debt->load(['customer', 'payments']);
         });

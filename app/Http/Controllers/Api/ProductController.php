@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductUnit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
@@ -14,21 +15,31 @@ class ProductController extends Controller
     // GET /api/v1/products (List produk lengkap dengan varian satuannya)
     public function index(Request $request): JsonResponse
     {
-        $query = Product::with(['category', 'units'])->where('is_active', true);
-
-        if ($request->filled('search')) {
-            $search = $request->query('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('barcode', $search);
+        // Gunakan cache jika request tanpa filter untuk mempercepat inisialisasi kasir
+        if (!$request->filled('search') && !$request->filled('category_id')) {
+            $products = Cache::remember('pos_products_catalog', 1800, function () {
+                return Product::with(['category', 'units'])
+                    ->where('is_active', true)
+                    ->orderBy('name', 'asc')
+                    ->get();
             });
-        }
+        } else {
+            $query = Product::with(['category', 'units'])->where('is_active', true);
 
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->query('category_id'));
-        }
+            if ($request->filled('search')) {
+                $search = $request->query('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('barcode', $search);
+                });
+            }
 
-        $products = $query->orderBy('name', 'asc')->get();
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->query('category_id'));
+            }
+
+            $products = $query->orderBy('name', 'asc')->get();
+        }
 
         return response()->json([
             'success' => true,
@@ -84,8 +95,11 @@ class ProductController extends Controller
                 ]);
             }
 
-            return $product->load('units');
+            return $product->load(['category', 'units']);
         });
+
+        Cache::forget('pos_products_catalog');
+        Cache::forget('pos_categories_with_count');
 
         return response()->json([
             'success' => true,
@@ -104,6 +118,8 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $product->increment('current_stock', $validated['added_stock']);
 
+        Cache::forget('pos_products_catalog');
+
         return response()->json([
             'success' => true,
             'message' => 'Stok produk berhasil diperbarui',
@@ -111,10 +127,10 @@ class ProductController extends Controller
         ]);
     }
 
-    // PUT/PATCH /api/v1/products/{id} (Update Barang & Varian Satuannya)
-    public function update(Request $request, int$id): JsonResponse
+    // PUT/PATCH /api/v1/products/{id} (Update Barang & Varian Satuannya secara aman)
+    public function update(Request $request, int $id): JsonResponse
     {
-        $validated =$request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:150',
             'barcode' => 'nullable|string|max:64|unique:products,barcode,' . $id,
             'category_id' => 'nullable|exists:categories,id',
@@ -131,7 +147,7 @@ class ProductController extends Controller
             'units.*.is_base_unit' => 'nullable|boolean',
         ]);
 
-        $product = DB::transaction(function () use ($validated,$id) {
+        $product = DB::transaction(function () use ($validated, $id) {
             $product = Product::findOrFail($id);
 
             $product->update([
@@ -142,27 +158,62 @@ class ProductController extends Controller
                 'base_buy_price' => $validated['base_buy_price'],
                 'base_sell_price' => $validated['base_sell_price'],
                 'current_stock' => $validated['current_stock'],
-                'min_stock_alert' => $validated['min_stock_alert'] ?? 5, 'allow_nominal_buy' =>$validated['allow_nominal_buy'] ?? false,
+                'min_stock_alert' => $validated['min_stock_alert'] ?? 5,
+                'allow_nominal_buy' => $validated['allow_nominal_buy'] ?? false,
             ]);
 
-            // Sinkronisasi ulang varian satuan (hapus yang lama dan insert yang baru)
-            $product->units()->delete();
+            // Sinkronisasi varian satuan secara AMAN tanpa menghapus relasi riwayat transaksi lampau
+            $existingUnits = $product->units()->get()->keyBy('unit_name');
+            $keptUnitIds = [];
 
             if (!empty($validated['units'])) {
-                foreach ($validated['units'] as$unit) {
-                    $product->units()->create($unit);
+                foreach ($validated['units'] as $unitData) {
+                    $unitName = $unitData['unit_name'];
+                    if (isset($existingUnits[$unitName])) {
+                        // Perbarui data satuan yang sudah ada (ID tetap sama sehingga order_items tidak putus)
+                        $existingUnit = $existingUnits[$unitName];
+                        $existingUnit->update($unitData);
+                        $keptUnitIds[] = $existingUnit->id;
+                    } else {
+                        // Buat satuan baru
+                        $newUnit = $product->units()->create($unitData);
+                        $keptUnitIds[] = $newUnit->id;
+                    }
                 }
             } else {
-                $product->units()->create([
-                    'unit_name' => '1 ' . ucfirst($product->base_unit),
-                    'conversion_factor' => 1.0000,
-                    'sell_price' => $product->base_sell_price,
-                    'is_base_unit' => true,
-                ]);
+                $baseUnitName = '1 ' . ucfirst($product->base_unit);
+                if (isset($existingUnits[$baseUnitName])) {
+                    $existingUnits[$baseUnitName]->update([
+                        'conversion_factor' => 1.0000,
+                        'sell_price' => $product->base_sell_price,
+                        'is_base_unit' => true,
+                    ]);
+                    $keptUnitIds[] = $existingUnits[$baseUnitName]->id;
+                } else {
+                    $newUnit = $product->units()->create([
+                        'unit_name' => $baseUnitName,
+                        'conversion_factor' => 1.0000,
+                        'sell_price' => $product->base_sell_price,
+                        'is_base_unit' => true,
+                    ]);
+                    $keptUnitIds[] = $newUnit->id;
+                }
             }
 
-            return $product->load('units');
+            // Hapus satuan yang tidak lagi digunakan HANYA jika belum pernah tercatat di riwayat transaksi
+            $unitsToRemove = $product->units()->whereNotIn('id', $keptUnitIds)->get();
+            foreach ($unitsToRemove as $unitToRemove) {
+                $hasHistoricalOrder = DB::table('order_items')->where('product_unit_id', $unitToRemove->id)->exists();
+                if (!$hasHistoricalOrder) {
+                    $unitToRemove->delete();
+                }
+            }
+
+            return $product->load(['category', 'units']);
         });
+
+        Cache::forget('pos_products_catalog');
+        Cache::forget('pos_categories_with_count');
 
         return response()->json([
             'success' => true,
@@ -177,10 +228,14 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         
         // Cek jika produk pernah ada di transaksi
-        $hasTransactions =$product->orderItems()->exists();
+        $hasTransactions = $product->orderItems()->exists();
         if ($hasTransactions) {
             // Jika ada riwayat transaksi, cukup nonaktifkan agar data pembukuan lampau aman
             $product->update(['is_active' => false]);
+
+            Cache::forget('pos_products_catalog');
+            Cache::forget('pos_categories_with_count');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Produk dinonaktifkan karena memiliki riwayat transaksi',
@@ -188,6 +243,9 @@ class ProductController extends Controller
         }
 
         $product->delete();
+
+        Cache::forget('pos_products_catalog');
+        Cache::forget('pos_categories_with_count');
 
         return response()->json([
             'success' => true,
